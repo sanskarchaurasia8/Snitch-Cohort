@@ -197,7 +197,11 @@ const Register = () => {
                       />
                       <div className="w-12 h-6 lg:w-14 lg:h-7 bg-white/5 rounded-full border border-white/5 peer peer-focus:ring-1 peer-focus:ring-[#F59E0B]/20 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 lg:after:top-1 after:left-0.5 lg:after:left-1 after:bg-[#D8C3AD]/40 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#F59E0B] peer-checked:after:bg-white transition-all duration-300"></div>
                     </label>
+                    
                   </div>
+                  <a href="/api/auth/google" className="text-[#F59E0B]/70 hover:text-[#F59E0B] cursor-pointer transition-colors duration-300 font-medium">
+                      Continue with Google
+                    </a>
                 </div>
 
                 {/* Submit button */}
