@@ -1,10 +1,4 @@
 {
-<<<<<<< HEAD
-  "dependencies": {
-    "express": "^5.2.1",
-    "mongoose": "^9.4.1",
-    "morgan": "^1.10.1"
-=======
   "name": "backend",
   "version": "1.0.0",
   "main": "server.js",
@@ -21,7 +15,9 @@
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.4.1",
-    "express-validator": "^7.3.2"
->>>>>>> 115552e2a8c5e7c60d0eaf9ed6ddfab78ece766b
+    "express": "^5.2.1",
+    "express-validator": "^7.3.2",
+    "mongoose": "^9.4.1",
+    "morgan": "^1.10.1"
   }
 }
