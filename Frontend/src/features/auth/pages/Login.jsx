@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../hook/useAuth";
 import { useNavigate } from "react-router";
+import ContinueWithGoogle from "../components/ContinueWithGoogle";
 
 /**
  * Premium Login Page — Snitch Clothing Platform
@@ -158,6 +159,7 @@ const Login = () => {
                     <span className="relative z-10">Sign In</span>
                     <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                   </button>
+                  <ContinueWithGoogle />
                 </div>
 
                 {/* Footer */}

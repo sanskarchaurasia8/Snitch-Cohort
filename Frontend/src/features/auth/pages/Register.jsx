@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../hook/useAuth";
 import { useNavigate } from "react-router";
+import ContinueWithGoogle from "../components/ContinueWithGoogle";
 
 /**
  * Premium Registration Page — Snitch Clothing Platform
@@ -199,9 +200,6 @@ const Register = () => {
                     </label>
                     
                   </div>
-                  <a href="/api/auth/google" className="text-[#F59E0B]/70 hover:text-[#F59E0B] cursor-pointer transition-colors duration-300 font-medium">
-                      Continue with Google
-                    </a>
                 </div>
 
                 {/* Submit button */}
@@ -213,6 +211,9 @@ const Register = () => {
                     <span className="relative z-10">Create Account</span>
                     <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                   </button>
+
+                  <ContinueWithGoogle />
+                  
                 </div>
 
                 {/* Footer */}
