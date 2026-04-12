@@ -227,7 +227,10 @@ const Register = () => {
           {/* Login link below card */}
           <p className="text-center mt-8 text-[#D8C3AD]/30 text-sm font-light">
             Already have an account?{" "}
-            <span className="text-[#F59E0B]/70 hover:text-[#F59E0B] cursor-pointer transition-colors duration-300 font-medium">
+            <span 
+                onClick={() => navigate("/login")}
+                className="text-[#F59E0B]/70 hover:text-[#F59E0B] cursor-pointer transition-colors duration-300 font-medium"
+            >
               Sign In
             </span>
           </p>
