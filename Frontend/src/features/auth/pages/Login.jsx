@@ -29,8 +29,12 @@ const Login = () => {
     e.preventDefault();
     try {
       console.log("LOGIN PAYLOAD:", formData);
-      await handleLogin(formData);
-      navigate("/");
+      const user = await handleLogin(formData);
+      if(user.role == "buyer"){
+        navigate("/");
+      } else if (user.role == "seller"){
+        navigate("/seller/dashboard")
+      }
     } catch (error) {
       console.error("Login failed", error);
     }
