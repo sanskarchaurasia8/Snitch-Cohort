@@ -1,11 +1,13 @@
 import React, {useEffect} from "react"
 import {useSelector} from "react-redux"
 import { useProduct } from "../hooks/useProduct"
+import { useNavigate } from "react-router"
 
 
 const Home = ()=> {
     const products = useSelector(state => state.product.products)
     const {handleGetAllProducts} = useProduct()
+    const navigate = useNavigate()
 
     useEffect(() =>{
         handleGetAllProducts()
@@ -24,6 +26,7 @@ const Home = ()=> {
                                 src={product.images?.[0]?.url || "https://via.placeholder.com/300"} 
                                 alt={product.title}
                                 style={styles.image}
+                                onClick={()=> navigate(`/product/${product._id}`)}
                             />
                             <div style={styles.cardContent}>
                                 <h3 style={styles.title}>{product.title}</h3>

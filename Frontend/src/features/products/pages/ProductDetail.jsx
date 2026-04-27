@@ -1,0 +1,282 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router';
+import { useProduct } from '../hooks/useProduct';
+
+const ProductDetail = () => {
+    const { productId } = useParams();
+    const navigate = useNavigate();
+    const { handleGetProductById } = useProduct();
+    const [product, setProduct] = useState(null);
+    const [selectedImage, setSelectedImage] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    const [imageLoaded, setImageLoaded] = useState(false);
+
+    async function fetchProductDetail() {
+        setIsLoading(true);
+        const data = await handleGetProductById(productId);
+        setProduct(data);
+        setIsLoading(false);
+    }
+
+    useEffect(() => {
+        fetchProductDetail();
+    }, [productId]);
+
+    useEffect(() => {
+        setImageLoaded(false);
+    }, [selectedImage]);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-10 h-10 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+                    <p className="text-neutral-500 text-sm tracking-[0.2em] uppercase font-light">
+                        Loading
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!product) {
+        return (
+            <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-neutral-400 text-lg mb-4">Product not found</p>
+                    <button
+                        onClick={() => navigate('/')}
+                        className="text-amber-400 hover:text-amber-300 text-sm tracking-[0.15em] uppercase transition-colors duration-300"
+                    >
+                        ← Back to Home
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const images = product.images || [];
+    const currentImage = images[selectedImage]?.url;
+
+    return (
+        <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 font-['Inter',sans-serif]">
+            {/* Top Navigation Bar */}
+            <nav className="sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-neutral-800/50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <button
+                        onClick={() => navigate('/')}
+                        className="group flex items-center gap-2 text-neutral-400 hover:text-amber-400 transition-colors duration-300"
+                    >
+                        <svg className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                        </svg>
+                        <span className="text-xs tracking-[0.2em] uppercase">Back</span>
+                    </button>
+                    <span className="text-xs tracking-[0.3em] uppercase text-amber-400/70 font-light">
+                        Snitch
+                    </span>
+                </div>
+            </nav>
+
+            {/* Main Content */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+
+                    {/* ─── Left Column: Image Gallery ─── */}
+                    <div className="flex flex-row gap-4">
+                        {/* Vertical Thumbnail Strip */}
+                        {images.length > 1 && (
+                            <div className="flex flex-col gap-3 flex-shrink-0">
+                                {images.map((img, index) => (
+                                    <button
+                                        key={img._id}
+                                        onClick={() => setSelectedImage(index)}
+                                        className={`relative w-16 h-20 lg:w-20 lg:h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 flex-shrink-0 cursor-pointer
+                                            ${selectedImage === index
+                                                ? 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.15)]'
+                                                : 'border-neutral-800/60 hover:border-neutral-600 opacity-60 hover:opacity-100'
+                                            }`}
+                                    >
+                                        <img
+                                            src={img.url}
+                                            alt={`Thumbnail ${index + 1}`}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        {selectedImage === index && (
+                                            <div className="absolute inset-0 border-2 border-amber-400 rounded-[10px]" />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Main Image */}
+                        <div className="relative aspect-[4/5] flex-1 min-w-0 overflow-hidden rounded-2xl bg-[#111111] border border-neutral-800/40 group">
+                            {currentImage && (
+                                <>
+                                    <img
+                                        key={selectedImage}
+                                        src={currentImage}
+                                        alt={`${product.title} — view ${selectedImage + 1}`}
+                                        onLoad={() => setImageLoaded(true)}
+                                        className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-out
+                                            ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
+                                    />
+                                    {/* Subtle gradient overlay at bottom */}
+                                    <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-[#0a0a0a]/60 to-transparent pointer-events-none" />
+
+                                    {/* Previous / Next buttons */}
+                                    {images.length > 1 && (
+                                        <>
+                                            <button
+                                                onClick={() => setSelectedImage((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
+                                                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full
+                                                    bg-black/40 backdrop-blur-md border border-neutral-700/50
+                                                    flex items-center justify-center
+                                                    text-neutral-300 hover:text-amber-400 hover:border-amber-400/40
+                                                    opacity-0 group-hover:opacity-100
+                                                    transition-all duration-300 cursor-pointer"
+                                                aria-label="Previous image"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                onClick={() => setSelectedImage((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full
+                                                    bg-black/40 backdrop-blur-md border border-neutral-700/50
+                                                    flex items-center justify-center
+                                                    text-neutral-300 hover:text-amber-400 hover:border-amber-400/40
+                                                    opacity-0 group-hover:opacity-100
+                                                    transition-all duration-300 cursor-pointer"
+                                                aria-label="Next image"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                                                </svg>
+                                            </button>
+                                        </>
+                                    )}
+
+                                    {/* Image counter badge */}
+                                    <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-md rounded-full px-3 py-1 text-[11px] tracking-[0.15em] text-neutral-300 border border-neutral-700/50">
+                                        {selectedImage + 1} / {images.length}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ─── Right Column: Product Info ─── */}
+                    <div className="flex flex-col justify-center lg:py-8">
+                        {/* Category / Breadcrumb hint */}
+                        <p className="text-[11px] tracking-[0.25em] uppercase text-amber-400/60 mb-3 font-light">
+                            Premium Collection
+                        </p>
+
+                        {/* Title */}
+                        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-light tracking-tight text-neutral-50 leading-tight mb-4">
+                            {product.title}
+                        </h1>
+
+                        {/* Divider */}
+                        <div className="w-12 h-px bg-gradient-to-r from-amber-400/80 to-transparent mb-6" />
+
+                        {/* Price */}
+                        <div className="flex items-baseline gap-2 mb-6">
+                            <span className="text-3xl font-light text-amber-400 tracking-tight">
+                                ₹{product.price?.amount?.toLocaleString('en-IN')}
+                            </span>
+                            <span className="text-xs text-neutral-500 tracking-[0.1em] uppercase">
+                                {product.price?.currency}
+                            </span>
+                        </div>
+
+                        {/* Description */}
+                        <p className="text-neutral-400 text-sm sm:text-base leading-relaxed mb-8 max-w-md font-light">
+                            {product.description}
+                        </p>
+
+                        {/* Subtle product meta */}
+                        <div className="flex items-center gap-4 mb-8 text-[11px] tracking-[0.15em] text-neutral-500 uppercase">
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                                In Stock
+                            </span>
+                            <span className="w-px h-3 bg-neutral-700" />
+                            <span>Free Delivery</span>
+                        </div>
+
+                        {/* ─── Action Buttons ─── */}
+                        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                            {/* Add to Cart */}
+                            <button
+                                id="add-to-cart-btn"
+                                className="group relative flex-1 flex items-center justify-center gap-3 px-8 py-4 rounded-xl
+                                    border border-amber-400/40 text-amber-400 bg-amber-400/5
+                                    hover:bg-amber-400/10 hover:border-amber-400/70 hover:shadow-[0_0_30px_rgba(251,191,36,0.08)]
+                                    active:scale-[0.98]
+                                    transition-all duration-300 cursor-pointer"
+                            >
+                                <svg className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-5.98.572M7.5 14.25h9m-9 0a3 3 0 01-5.98-.572M16.5 14.25a3 3 0 005.98.572M16.5 14.25h-9m9 0a3 3 0 015.98-.572M7.5 14.25L5.106 5.272M16.5 14.25l2.394-8.978M5.106 5.272H19.894" />
+                                </svg>
+                                <span className="text-sm tracking-[0.15em] uppercase font-medium">
+                                    Add to Cart
+                                </span>
+                            </button>
+
+                            {/* Buy Now */}
+                            <button
+                                id="buy-now-btn"
+                                className="group relative flex-1 flex items-center justify-center gap-3 px-8 py-4 rounded-xl
+                                    bg-gradient-to-r from-amber-500 to-amber-600 text-[#0a0a0a]
+                                    hover:from-amber-400 hover:to-amber-500 hover:shadow-[0_8px_40px_rgba(251,191,36,0.25)]
+                                    active:scale-[0.98]
+                                    transition-all duration-300 cursor-pointer"
+                            >
+                                <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                                </svg>
+                                <span className="text-sm tracking-[0.15em] uppercase font-semibold">
+                                    Buy Now
+                                </span>
+                            </button>
+                        </div>
+
+                        {/* Trust badges */}
+                        <div className="grid grid-cols-3 gap-3 pt-6 border-t border-neutral-800/40">
+                            <div className="flex flex-col items-center gap-2 py-3">
+                                <svg className="w-5 h-5 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                                </svg>
+                                <span className="text-[10px] tracking-[0.15em] uppercase text-neutral-500 text-center">
+                                    Authentic
+                                </span>
+                            </div>
+                            <div className="flex flex-col items-center gap-2 py-3">
+                                <svg className="w-5 h-5 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.125-.504 1.125-1.125v-1.5c0-1.036-.84-1.875-1.875-1.875H19.5m-14.25 0h14.25m-14.25 0v-7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v7.5" />
+                                </svg>
+                                <span className="text-[10px] tracking-[0.15em] uppercase text-neutral-500 text-center">
+                                    Free Shipping
+                                </span>
+                            </div>
+                            <div className="flex flex-col items-center gap-2 py-3">
+                                <svg className="w-5 h-5 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 14.652" />
+                                </svg>
+                                <span className="text-[10px] tracking-[0.15em] uppercase text-neutral-500 text-center">
+                                    Easy Returns
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    );
+};
+
+export default ProductDetail;
