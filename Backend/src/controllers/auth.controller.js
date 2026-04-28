@@ -6,7 +6,7 @@ import { config } from "../config/config.js";
 async function sendTokenResponse(user, res, message) {
     const token = jwt.sign({
         id: user._id,
-    }, config.JWT_SECRET,{
+    }, config.JWT_SECRET, {
         expiresIn: "7d"
     })
 
@@ -34,8 +34,8 @@ export const register = async (req, res) => {
         const existingUser = await userModel.findOne({
             $or: [
                 { email },
-                 { contact }
-                ]
+                { contact }
+            ]
         });
         if (existingUser) {
             return res.status(400).json({ message: "User with this email or contact already exists" });
@@ -77,15 +77,15 @@ export const login = async (req, res) => {
 };
 
 export const googleAuthCallback = async (req, res) => {
-   
-    const {id, displayName, emails, photos} = req.user;
+
+    const { id, displayName, emails, photos } = req.user;
     const email = emails[0].value;
     const profilePic = photos[0].value;
 
 
     let user = await userModel.findOne({
-         email
-     });
+        email
+    });
 
     if (!user) {
         user = await userModel.create({
@@ -97,7 +97,7 @@ export const googleAuthCallback = async (req, res) => {
 
     const token = jwt.sign({
         id: user._id,
-    }, config.JWT_SECRET,{
+    }, config.JWT_SECRET, {
         expiresIn: "7d"
     })
 
@@ -113,9 +113,10 @@ export const getMe = async (req, res) => {
         message: "User fetched successfully",
         success: true,
         user: {
-            id: user.id_,
-            email: user.emaill,
-            contact: user.fullname,
+            id: user._id,
+            email: user.email,
+            fullname: user.fullname,
+            contact: user.contact,
             role: user.role
         }
     })

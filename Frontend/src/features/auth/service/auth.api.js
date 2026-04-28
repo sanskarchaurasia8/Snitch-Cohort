@@ -25,3 +25,8 @@ export async function login({ email, password }) {
   });
   return response.data;
 }
+
+export async function checkAuth() {
+  const response = await authApiInstance.get("/me");
+  return response.data;
+}
