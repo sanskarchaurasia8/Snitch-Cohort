@@ -50,7 +50,7 @@ const productSchema = new mongoose.Schema({
             type: Number,
             default: 0
           },
-          attributes:{
+          attributes: {
             type: Map,
             of: String
           },

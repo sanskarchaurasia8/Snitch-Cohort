@@ -16,12 +16,30 @@ export async function getSellerProduct() {
     return responce.data;
 }
 
-export async function getAllProducts(){
+export async function getAllProducts() {
     const responce = await productApiInstance.get("/")
     return responce.data
 }
 
-export async function getProductById(productId){
+export async function getProductById(productId) {
     const responce = await productApiInstance.get(`/detail/${productId}`)
     return responce.data
+}
+
+export async function addProductVariant(productId, newProductVariant) {
+    const response = await productApiInstance.post(
+        `/${productId}/variants`,
+        newProductVariant
+    );
+    return response.data;
+}
+
+export async function updateVariantStock(productId, variantId, stock) {
+    const response = await productApiInstance.patch(`/${productId}/variants/${variantId}/stock`, { stock });
+    return response.data;
+}
+
+export async function deleteVariant(productId, variantId) {
+    const response = await productApiInstance.delete(`/${productId}/variants/${variantId}`);
+    return response.data;
 }
