@@ -16,7 +16,7 @@ const Dashboard = () => {
 
     useEffect(() => {
         handleGetSellerProduct().finally(() => setIsLoading(false));
-    }, []);
+    }, [handleGetSellerProduct]);
 
     const formatPrice = (price) => {
         if (!price) return "N/A";

@@ -11,7 +11,7 @@ const Home = ()=> {
 
     useEffect(() =>{
         handleGetAllProducts()
-    }, [])
+    }, [handleGetAllProducts])
 
     return (
         <div style={styles.container}>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router';
 import { useProduct } from '../hooks/useProduct';
 
@@ -21,7 +21,7 @@ const SellerProductDetails = () => {
     images: []
   });
 
-  const fetchProductDetail = async () => {
+  const fetchProductDetail = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await handleGetProductById(productId);
@@ -32,11 +32,11 @@ const SellerProductDetails = () => {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [handleGetProductById, productId]);
 
   useEffect(() => {
     fetchProductDetail();
-  }, [productId]);
+  }, [fetchProductDetail]);
 
   const handleStockUpdate = async (variantId, newStock) => {
     try {

@@ -1,11 +1,14 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useProduct } from '../hooks/useProduct';
+import { useCart } from "../../cart/hook/useCart";
 
 const ProductDetail = () => {
     const { productId } = useParams();
     const navigate = useNavigate();
     const { handleGetProductById } = useProduct();
+    const { handleAddItem } = useCart();
+
     const [product, setProduct] = useState(null);
     const [selectedImage, setSelectedImage] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
@@ -15,29 +18,58 @@ const ProductDetail = () => {
     const [selectedAttributes, setSelectedAttributes] = useState({});
     const [activeVariant, setActiveVariant] = useState(null);
 
-    async function fetchProductDetail() {
+    const fetchProductDetail = useCallback(async () => {
         setIsLoading(true);
+        setActiveVariant(null);
+        setSelectedAttributes({});
         const data = await handleGetProductById(productId);
         setProduct(data);
         setIsLoading(false);
-    }
+    }, [handleGetProductById, productId]);
 
     useEffect(() => {
         fetchProductDetail();
-    }, [productId]);
+    }, [fetchProductDetail]);
 
     useEffect(() => {
         setImageLoaded(false);
     }, [selectedImage]);
 
+    useEffect(() => {
+        if (product && product.varients && product.varients.length > 0 && !activeVariant) {
+            const firstVariant = product.varients[0];
+            setActiveVariant(firstVariant);
+
+            if (firstVariant.attributes) {
+                const initialAttributes = {};
+                if (Array.isArray(firstVariant.attributes)) {
+                    firstVariant.attributes.forEach(attr => {
+                        if (attr.key) initialAttributes[attr.key] = attr.value;
+                    });
+                } else {
+                    Object.entries(firstVariant.attributes).forEach(([key, value]) => {
+                        initialAttributes[key] = value;
+                    });
+                }
+                setSelectedAttributes(initialAttributes);
+            }
+        }
+    }, [product, activeVariant]);
+
     // Compute variants and attributes
-    const variants = product?.varients || [];
-    
+    const variants = useMemo(() => product?.varients || [], [product]);
+
     const attributeKeys = useMemo(() => {
         const keys = new Set();
         variants.forEach(v => {
             if (v.attributes) {
-                Object.keys(v.attributes).forEach(k => keys.add(k));
+                if (Array.isArray(v.attributes)) {
+                    v.attributes.forEach(attr => {
+                        if (attr.key) keys.add(attr.key);
+                    });
+                } else {
+                    Object.keys(v.attributes).forEach(k => keys.add(k));
+                }
             }
         });
         return Array.from(keys);
@@ -48,8 +80,13 @@ const ProductDetail = () => {
         attributeKeys.forEach(key => {
             const values = new Set();
             variants.forEach(v => {
-                if (v.attributes && v.attributes[key]) {
-                    values.add(v.attributes[key]);
+                if (v.attributes) {
+                    if (Array.isArray(v.attributes)) {
+                        const attr = v.attributes.find(a => a.key === key);
+                        if (attr) values.add(attr.value);
+                    } else if (v.attributes[key]) {
+                        values.add(v.attributes[key]);
+                    }
                 }
             });
             options[key] = Array.from(values);
@@ -60,12 +97,18 @@ const ProductDetail = () => {
     const handleAttributeSelect = (key, value) => {
         const newSelected = { ...selectedAttributes, [key]: value };
         setSelectedAttributes(newSelected);
-        
+
         // Find matching variant
         const matchingVariant = variants.find(v => {
-            return Object.entries(newSelected).every(([k, val]) => v.attributes && v.attributes[k] === val);
+            return Object.entries(newSelected).every(([k, val]) => {
+                if (!v.attributes) return false;
+                if (Array.isArray(v.attributes)) {
+                    return v.attributes.some(attr => attr.key === k && attr.value === val);
+                }
+                return v.attributes[k] === val;
+            });
         });
-        
+
         setActiveVariant(matchingVariant || null);
         setSelectedImage(0); // Reset image selection
     };
@@ -102,8 +145,8 @@ const ProductDetail = () => {
     console.log(product)
 
     // Compute Display Data (Fallback to product if variant missing data)
-    const displayPrice = (activeVariant?.price?.amount !== undefined && activeVariant?.price?.amount !== null) 
-        ? activeVariant.price 
+    const displayPrice = (activeVariant?.price?.amount !== undefined && activeVariant?.price?.amount !== null)
+        ? activeVariant.price
         : product.price;
     const displayImages = (activeVariant?.images?.length > 0) ? activeVariant.images : (product.images || []);
     const currentImage = displayImages[selectedImage]?.url;
@@ -271,8 +314,8 @@ const ProductDetail = () => {
                                                 key={value}
                                                 onClick={() => handleAttributeSelect(key, value)}
                                                 className={`px-4 py-2 rounded-lg text-sm tracking-wide border transition-all duration-300 cursor-pointer
-                                                    ${isSelected 
-                                                        ? 'border-amber-400 text-amber-400 bg-amber-400/10' 
+                                                    ${isSelected
+                                                        ? 'border-amber-400 text-amber-400 bg-amber-400/10'
                                                         : 'border-neutral-800 text-neutral-400 hover:border-neutral-600 hover:text-neutral-200'}`}
                                             >
                                                 {value}
@@ -293,6 +336,21 @@ const ProductDetail = () => {
                                     hover:bg-amber-400/10 hover:border-amber-400/70 hover:shadow-[0_0_30px_rgba(251,191,36,0.08)]
                                     active:scale-[0.98]
                                     transition-all duration-300 cursor-pointer"
+
+                                onClick={async () => {
+                                    if (!activeVariant) return;
+                                    try {
+                                        await handleAddItem(product._id, activeVariant._id, 1);
+                                        alert("Product added to cart!");
+                                    } catch (error) {
+                                        console.error("Add to cart failed:", error);
+                                        if (error?.message === "Unauthorized" || error === "Unauthorized" || error?.message?.toLowerCase().includes("unauthorized")) {
+                                            navigate('/login');
+                                        } else {
+                                            alert(error?.message || "Failed to add to cart. Please try again or log in.");
+                                        }
+                                    }
+                                }}
                             >
                                 <svg className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-5.98.572M7.5 14.25h9m-9 0a3 3 0 01-5.98-.572M16.5 14.25a3 3 0 005.98.572M16.5 14.25h-9m9 0a3 3 0 015.98-.572M7.5 14.25L5.106 5.272M16.5 14.25l2.394-8.978M5.106 5.272H19.894" />

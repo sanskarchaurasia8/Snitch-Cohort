@@ -29,12 +29,8 @@ const Login = () => {
     e.preventDefault();
     try {
       console.log("LOGIN PAYLOAD:", formData);
-      const user = await handleLogin(formData);
-      if(user.role == "buyer"){
-        navigate("/");
-      } else if (user.role == "seller"){
-        navigate("/seller/dashboard")
-      }
+      await handleLogin(formData);
+      navigate("/");
     } catch (error) {
       console.error("Login failed", error);
     }
@@ -106,7 +102,7 @@ const Login = () => {
 
           {/* Form card */}
           <div className="bg-[#1C1B1B]/30 backdrop-blur-2xl border border-white/[0.04] rounded-3xl lg:rounded-[2rem] p-8 sm:p-10 lg:p-12 xl:p-14 relative overflow-hidden shadow-2xl">
-            
+
             {/* Top reflective edge */}
             <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#F59E0B]/20 to-transparent" />
 
@@ -182,9 +178,9 @@ const Login = () => {
           {/* Register link below card */}
           <p className="text-center mt-8 text-[#D8C3AD]/30 text-sm font-light">
             Don't have an account?{" "}
-            <span 
-                onClick={() => navigate("/register")}
-                className="text-[#F59E0B]/70 hover:text-[#F59E0B] cursor-pointer transition-colors duration-300 font-medium"
+            <span
+              onClick={() => navigate("/register")}
+              className="text-[#F59E0B]/70 hover:text-[#F59E0B] cursor-pointer transition-colors duration-300 font-medium"
             >
               Sign Up
             </span>

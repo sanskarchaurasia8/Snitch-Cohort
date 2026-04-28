@@ -117,17 +117,26 @@ export async function addProductVariant(req, res) {
         // 🔹 Safe parsing of attributes
         let attributes = {};
         if (req.body.attributes) {
+            let parsedAttr = req.body.attributes;
             if (typeof req.body.attributes === "string") {
                 try {
-                    attributes = JSON.parse(req.body.attributes);
+                    parsedAttr = JSON.parse(req.body.attributes);
                 } catch (error) {
                     return res.status(400).json({
                         message: "Invalid attributes format. Must be valid JSON string.",
                         success: false
                     });
                 }
-            } else if (typeof req.body.attributes === "object") {
-                attributes = req.body.attributes;
+            }
+            
+            if (Array.isArray(parsedAttr)) {
+                parsedAttr.forEach(attr => {
+                    if (attr.key && attr.value) {
+                        attributes[attr.key] = attr.value;
+                    }
+                });
+            } else if (typeof parsedAttr === "object" && parsedAttr !== null) {
+                attributes = parsedAttr;
             }
         }
 
