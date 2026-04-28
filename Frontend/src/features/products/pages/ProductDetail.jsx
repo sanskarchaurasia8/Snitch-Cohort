@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useProduct } from '../hooks/useProduct';
 
@@ -10,6 +10,10 @@ const ProductDetail = () => {
     const [selectedImage, setSelectedImage] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [imageLoaded, setImageLoaded] = useState(false);
+
+    // Variant State
+    const [selectedAttributes, setSelectedAttributes] = useState({});
+    const [activeVariant, setActiveVariant] = useState(null);
 
     async function fetchProductDetail() {
         setIsLoading(true);
@@ -25,6 +29,46 @@ const ProductDetail = () => {
     useEffect(() => {
         setImageLoaded(false);
     }, [selectedImage]);
+
+    // Compute variants and attributes
+    const variants = product?.varients || [];
+    
+    const attributeKeys = useMemo(() => {
+        const keys = new Set();
+        variants.forEach(v => {
+            if (v.attributes) {
+                Object.keys(v.attributes).forEach(k => keys.add(k));
+            }
+        });
+        return Array.from(keys);
+    }, [variants]);
+
+    const attributeOptions = useMemo(() => {
+        const options = {};
+        attributeKeys.forEach(key => {
+            const values = new Set();
+            variants.forEach(v => {
+                if (v.attributes && v.attributes[key]) {
+                    values.add(v.attributes[key]);
+                }
+            });
+            options[key] = Array.from(values);
+        });
+        return options;
+    }, [variants, attributeKeys]);
+
+    const handleAttributeSelect = (key, value) => {
+        const newSelected = { ...selectedAttributes, [key]: value };
+        setSelectedAttributes(newSelected);
+        
+        // Find matching variant
+        const matchingVariant = variants.find(v => {
+            return Object.entries(newSelected).every(([k, val]) => v.attributes && v.attributes[k] === val);
+        });
+        
+        setActiveVariant(matchingVariant || null);
+        setSelectedImage(0); // Reset image selection
+    };
 
     if (isLoading) {
         return (
@@ -55,8 +99,15 @@ const ProductDetail = () => {
         );
     }
 
-    const images = product.images || [];
-    const currentImage = images[selectedImage]?.url;
+    console.log(product)
+
+    // Compute Display Data (Fallback to product if variant missing data)
+    const displayPrice = (activeVariant?.price?.amount !== undefined && activeVariant?.price?.amount !== null) 
+        ? activeVariant.price 
+        : product.price;
+    const displayImages = (activeVariant?.images?.length > 0) ? activeVariant.images : (product.images || []);
+    const currentImage = displayImages[selectedImage]?.url;
+    const isOutOfStock = activeVariant ? activeVariant.stock === 0 : false;
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 font-['Inter',sans-serif]">
@@ -85,9 +136,9 @@ const ProductDetail = () => {
                     {/* ─── Left Column: Image Gallery ─── */}
                     <div className="flex flex-row gap-4">
                         {/* Vertical Thumbnail Strip */}
-                        {images.length > 1 && (
+                        {displayImages.length > 1 && (
                             <div className="flex flex-col gap-3 flex-shrink-0">
-                                {images.map((img, index) => (
+                                {displayImages.map((img, index) => (
                                     <button
                                         key={img._id}
                                         onClick={() => setSelectedImage(index)}
@@ -126,10 +177,10 @@ const ProductDetail = () => {
                                     <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-[#0a0a0a]/60 to-transparent pointer-events-none" />
 
                                     {/* Previous / Next buttons */}
-                                    {images.length > 1 && (
+                                    {displayImages.length > 1 && (
                                         <>
                                             <button
-                                                onClick={() => setSelectedImage((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
+                                                onClick={() => setSelectedImage((prev) => (prev === 0 ? displayImages.length - 1 : prev - 1))}
                                                 className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full
                                                     bg-black/40 backdrop-blur-md border border-neutral-700/50
                                                     flex items-center justify-center
@@ -143,7 +194,7 @@ const ProductDetail = () => {
                                                 </svg>
                                             </button>
                                             <button
-                                                onClick={() => setSelectedImage((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
+                                                onClick={() => setSelectedImage((prev) => (prev === displayImages.length - 1 ? 0 : prev + 1))}
                                                 className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full
                                                     bg-black/40 backdrop-blur-md border border-neutral-700/50
                                                     flex items-center justify-center
@@ -161,7 +212,7 @@ const ProductDetail = () => {
 
                                     {/* Image counter badge */}
                                     <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-md rounded-full px-3 py-1 text-[11px] tracking-[0.15em] text-neutral-300 border border-neutral-700/50">
-                                        {selectedImage + 1} / {images.length}
+                                        {selectedImage + 1} / {displayImages.length}
                                     </div>
                                 </>
                             )}
@@ -186,10 +237,10 @@ const ProductDetail = () => {
                         {/* Price */}
                         <div className="flex items-baseline gap-2 mb-6">
                             <span className="text-3xl font-light text-amber-400 tracking-tight">
-                                ₹{product.price?.amount?.toLocaleString('en-IN')}
+                                ₹{displayPrice?.amount?.toLocaleString('en-IN')}
                             </span>
                             <span className="text-xs text-neutral-500 tracking-[0.1em] uppercase">
-                                {product.price?.currency}
+                                {displayPrice?.currency}
                             </span>
                         </div>
 
@@ -201,12 +252,36 @@ const ProductDetail = () => {
                         {/* Subtle product meta */}
                         <div className="flex items-center gap-4 mb-8 text-[11px] tracking-[0.15em] text-neutral-500 uppercase">
                             <span className="flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                                In Stock
+                                <span className={`w-1.5 h-1.5 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-emerald-500'} inline-block`} />
+                                {isOutOfStock ? 'Out of Stock' : 'In Stock'}
                             </span>
                             <span className="w-px h-3 bg-neutral-700" />
                             <span>Free Delivery</span>
                         </div>
+
+                        {/* Variant Attributes Selection */}
+                        {attributeKeys.map(key => (
+                            <div key={key} className="mb-6">
+                                <h3 className="text-sm tracking-[0.15em] uppercase text-neutral-400 mb-3">{key}</h3>
+                                <div className="flex flex-wrap gap-3">
+                                    {attributeOptions[key].map(value => {
+                                        const isSelected = selectedAttributes[key] === value;
+                                        return (
+                                            <button
+                                                key={value}
+                                                onClick={() => handleAttributeSelect(key, value)}
+                                                className={`px-4 py-2 rounded-lg text-sm tracking-wide border transition-all duration-300 cursor-pointer
+                                                    ${isSelected 
+                                                        ? 'border-amber-400 text-amber-400 bg-amber-400/10' 
+                                                        : 'border-neutral-800 text-neutral-400 hover:border-neutral-600 hover:text-neutral-200'}`}
+                                            >
+                                                {value}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        ))}
 
                         {/* ─── Action Buttons ─── */}
                         <div className="flex flex-col sm:flex-row gap-4 mb-8">
