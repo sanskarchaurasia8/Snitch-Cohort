@@ -4,7 +4,7 @@ import { useCart } from '../hook/useCart';
 
 const Cart = () => {
     const cartItems = useSelector(state => state.cart.items) || [];
-    const { handleGetCart } = useCart();
+    const { handleGetCart, handleIncrementCartItem, handleDecrementCartItem } = useCart();
 
     useEffect(() => {
         handleGetCart();
@@ -66,11 +66,18 @@ const Cart = () => {
 
                                         <div className="flex items-center gap-4 mt-4 sm:mt-0">
                                             <div className="flex items-center bg-[#0e0e0e] rounded-lg p-1 border border-[#353534]">
-                                                <button className="w-8 h-8 flex items-center justify-center text-[#d8c3ad] hover:text-[#F59E0B] transition-colors rounded-md hover:bg-[#2a2a2a]">
+                                                <button 
+                                                    onClick={() => handleDecrementCartItem(item.product._id, item.variant)}
+                                                    disabled={item.quantity <= 1}
+                                                    className={`w-8 h-8 flex items-center justify-center transition-colors rounded-md ${item.quantity <= 1 ? 'text-[#353534] cursor-not-allowed' : 'text-[#d8c3ad] hover:text-[#F59E0B] hover:bg-[#2a2a2a]'}`}
+                                                >
                                                     -
                                                 </button>
                                                 <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
-                                                <button className="w-8 h-8 flex items-center justify-center text-[#d8c3ad] hover:text-[#F59E0B] transition-colors rounded-md hover:bg-[#2a2a2a]">
+                                                <button 
+                                                    onClick={() => handleIncrementCartItem(item.product._id, item.variant)}
+                                                    className="w-8 h-8 flex items-center justify-center text-[#d8c3ad] hover:text-[#F59E0B] transition-colors rounded-md hover:bg-[#2a2a2a]"
+                                                >
                                                     +
                                                 </button>
                                             </div>

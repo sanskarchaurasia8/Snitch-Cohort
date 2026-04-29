@@ -92,3 +92,92 @@ export const getCart = async (req,res) => {
         cart
     });
 }
+
+export const incrementCartItemQuantity = async (req,res) => {
+    const {productId,variantId} = req.params;
+    
+    const product = await productModel.findOne({
+        _id: productId,
+        "varients._id": variantId
+    })
+
+    if(!product){
+        return res.status(404).json({
+            message: "Product or variant not found",
+            success: false
+        })
+    }
+
+    const cart = await cartModel.findOne({ user: req.user._id});
+
+    if(!cart){
+        return res.status(404).json({
+            message: "Cart not found",
+            success: false
+        })
+    }
+
+    const stock = await stockOfVariant(productId,variantId)
+
+    const itemQuantityInCart = cart.items.find(item => item.product.toString() === productId && item.variant?.toString() === variantId) || 0;
+
+    if(itemQuantityInCart + 1 > stock){
+        return res.status(400).json({
+            message: `Only ${stock} items left in stock. and you already have ${itemQuantityInCart} items in your cart`,
+            success: false
+        })
+    }
+
+    await cartModel.findOneAndUpdate(
+        { user: req.user._id, "items.product": productId, "items.variant": variantId},
+        {$inc:{"items.$.quantity": 1}},
+        {new: true}
+    )
+
+    return res.status(200).json({
+        message: "Cart Item Quantity incremented successfully",
+        success: true
+    });
+
+}
+
+export const decrementCartItemQuantity = async (req,res) => {
+    const {productId,variantId} = req.params;
+    
+    const cart = await cartModel.findOne({ user: req.user._id});
+
+    if(!cart){
+        return res.status(404).json({
+            message: "Cart not found",
+            success: false
+        })
+    }
+
+    const cartItem = cart.items.find(item => item.product.toString() === productId && item.variant?.toString() === variantId);
+
+    if(!cartItem){
+        return res.status(404).json({
+            message: "Item not found in cart",
+            success: false
+        })
+    }
+
+    if(cartItem.quantity <= 1){
+        return res.status(400).json({
+            message: "Quantity cannot be less than 1. Use remove item instead.",
+            success: false
+        })
+    }
+
+    await cartModel.findOneAndUpdate(
+        { user: req.user._id, "items.product": productId, "items.variant": variantId},
+        {$inc:{"items.$.quantity": -1}},
+        {new: true}
+    )
+
+    return res.status(200).json({
+        message: "Cart Item Quantity decremented successfully",
+        success: true
+    });
+
+}

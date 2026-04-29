@@ -102,14 +102,34 @@ const Dashboard = () => {
             <main className="max-w-screen-xl mx-auto px-6 sm:px-10 xl:px-20 py-12 lg:py-16">
 
                 {/* Page header */}
-                <header className="mb-12 lg:mb-16">
-                    <p className="text-[#D8C3AD]/40 text-[10px] tracking-[0.25em] uppercase font-medium mb-3">
-                        Seller Portal
-                    </p>
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-light tracking-tight text-white leading-[1.05]">
-                        Your <span className="font-semibold text-[#F59E0B]">Dashboard</span>
-                    </h1>
-                    <div className="w-12 h-[1.5px] bg-[#F59E0B]/50 mt-5 rounded-full" />
+                <header className="mb-12 lg:mb-16 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                    <div>
+                        <p className="text-[#D8C3AD]/40 text-[10px] tracking-[0.25em] uppercase font-medium mb-3">
+                            Seller Portal
+                        </p>
+                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-light tracking-tight text-white leading-[1.05]">
+                            Your <span className="font-semibold text-[#F59E0B]">Dashboard</span>
+                        </h1>
+                        <div className="w-12 h-[1.5px] bg-[#F59E0B]/50 mt-5 rounded-full" />
+                    </div>
+                    
+                    {/* Add Product Button */}
+                    <Link
+                        to="/seller/create-product"
+                        className="group relative inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#F59E0B] to-[#FFC174] text-[#131313] px-6 py-3.5 rounded-xl font-bold text-sm tracking-[0.1em] uppercase overflow-hidden hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_20px_-5px_rgba(245,158,11,0.4)] hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.6)]"
+                    >
+                        <span className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                        <svg 
+                            className="w-5 h-5 relative z-10" 
+                            fill="none" 
+                            viewBox="0 0 24 24" 
+                            stroke="currentColor" 
+                            strokeWidth={2.5}
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        <span className="relative z-10">Add Product</span>
+                    </Link>
                 </header>
 
                 {/* ── Stats Row ───────────────────────────────────────────── */}

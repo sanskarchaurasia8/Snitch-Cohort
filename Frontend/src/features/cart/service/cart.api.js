@@ -23,3 +23,13 @@ export const getCart = async () => {
     const response = await cartApiInstance.get("/");
     return response.data;
 } 
+
+export const incrementCartItemApi = async ({ productId,variantId }) => {
+    const response = await cartApiInstance.patch(`/quantity/increment/${productId}/${variantId}`);
+    return response.data;
+}
+
+export const decrementCartItemApi = async ({ productId,variantId }) => {
+    const response = await cartApiInstance.patch(`/quantity/decrement/${productId}/${variantId}`);
+    return response.data;
+}

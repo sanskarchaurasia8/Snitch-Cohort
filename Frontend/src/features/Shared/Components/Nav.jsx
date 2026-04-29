@@ -60,6 +60,14 @@ const Nav = () => {
                                 {link.name}
                             </Link>
                         ))}
+                        {user?.role === 'seller' && (
+                            <Link
+                                to="/seller/dashboard"
+                                className="text-sm uppercase tracking-widest text-[#F59E0B] hover:text-[#FFC174] transition-colors duration-300 font-bold relative after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[1.5px] after:bg-[#F59E0B] after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-left"
+                            >
+                                Dashboard
+                            </Link>
+                        )}
                     </div>
 
                     {/* Right: Actions (Cart, User/Login) */}
@@ -167,6 +175,15 @@ const Nav = () => {
                             {link.name}
                         </Link>
                     ))}
+                    {user?.role === 'seller' && (
+                        <Link
+                            to="/seller/dashboard"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="text-base uppercase tracking-widest text-[#F59E0B] hover:text-[#FFC174] transition-colors duration-300 font-bold block"
+                        >
+                            Dashboard
+                        </Link>
+                    )}
                     <div className="h-px w-full bg-[#353534] my-2"></div>
                     {isAuthenticated || user ? (
                         <Link

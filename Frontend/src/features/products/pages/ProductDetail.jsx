@@ -96,10 +96,9 @@ const ProductDetail = () => {
 
     const handleAttributeSelect = (key, value) => {
         const newSelected = { ...selectedAttributes, [key]: value };
-        setSelectedAttributes(newSelected);
 
-        // Find matching variant
-        const matchingVariant = variants.find(v => {
+        // 1. Try to find a variant that exactly matches ALL selected attributes
+        let matchingVariant = variants.find(v => {
             return Object.entries(newSelected).every(([k, val]) => {
                 if (!v.attributes) return false;
                 if (Array.isArray(v.attributes)) {
@@ -109,8 +108,37 @@ const ProductDetail = () => {
             });
         });
 
-        setActiveVariant(matchingVariant || null);
-        setSelectedImage(0); // Reset image selection
+        // 2. If no exact match (e.g. clicking Black but current size M doesn't exist in Black),
+        // find the first variant that matches the newly clicked attribute.
+        if (!matchingVariant) {
+            matchingVariant = variants.find(v => {
+                if (!v.attributes) return false;
+                if (Array.isArray(v.attributes)) {
+                    return v.attributes.some(attr => attr.key === key && attr.value === value);
+                }
+                return v.attributes[key] === value;
+            });
+
+            // 3. Sync the selected attributes to this new valid variant so the UI reflects reality
+            if (matchingVariant && matchingVariant.attributes) {
+                if (Array.isArray(matchingVariant.attributes)) {
+                    matchingVariant.attributes.forEach(attr => {
+                        if (attr.key) newSelected[attr.key] = attr.value;
+                    });
+                } else {
+                    Object.entries(matchingVariant.attributes).forEach(([k, v]) => {
+                        newSelected[k] = v;
+                    });
+                }
+            }
+        }
+
+        // 4. Update states
+        setSelectedAttributes(newSelected);
+        if (matchingVariant) {
+            setActiveVariant(matchingVariant);
+            setSelectedImage(0); // Reset image selection
+        }
     };
 
     if (isLoading) {
