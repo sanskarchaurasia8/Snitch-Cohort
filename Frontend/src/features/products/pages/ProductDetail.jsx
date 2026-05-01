@@ -18,17 +18,36 @@ const ProductDetail = () => {
     const [selectedAttributes, setSelectedAttributes] = useState({});
     const [activeVariant, setActiveVariant] = useState(null);
 
-    const fetchProductDetail = useCallback(async () => {
-        setIsLoading(true);
-        setActiveVariant(null);
-        setSelectedAttributes({});
+    const fetchProductDetail = useCallback(async (isBackgroundRefetch = false) => {
+        if (!isBackgroundRefetch) {
+            setIsLoading(true);
+            setActiveVariant(null);
+            setSelectedAttributes({});
+        }
+        
         const data = await handleGetProductById(productId);
         setProduct(data);
-        setIsLoading(false);
+
+        if (isBackgroundRefetch) {
+            // Update active variant with fresh data to reflect price changes
+            setActiveVariant(prev => {
+                if (!prev || !data.varients) return prev;
+                return data.varients.find(v => v._id === prev._id) || prev;
+            });
+        } else {
+            setIsLoading(false);
+        }
     }, [handleGetProductById, productId]);
 
     useEffect(() => {
-        fetchProductDetail();
+        fetchProductDetail(false); // Initial load
+        
+        // Polling mechanism to automatically catch direct database updates
+        const intervalId = setInterval(() => {
+            fetchProductDetail(true); // Background refresh
+        }, 5000); // 5 seconds polling interval
+        
+        return () => clearInterval(intervalId);
     }, [fetchProductDetail]);
 
     useEffect(() => {
@@ -173,12 +192,13 @@ const ProductDetail = () => {
     console.log(product)
 
     // Compute Display Data (Fallback to product if variant missing data)
-    const displayPrice = (activeVariant?.price?.amount !== undefined && activeVariant?.price?.amount !== null)
-        ? activeVariant.price
-        : product.price;
     const displayImages = (activeVariant?.images?.length > 0) ? activeVariant.images : (product.images || []);
     const currentImage = displayImages[selectedImage]?.url;
     const isOutOfStock = activeVariant ? activeVariant.stock === 0 : false;
+    
+    // Dynamic Pricing Logic (Strictly variant.price -> product.price)
+    const displayCurrentPrice = activeVariant?.price?.amount ?? product?.price?.amount ?? 0;
+    const displayCurrency = activeVariant?.price?.currency ?? product?.price?.currency ?? 'INR';
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 font-['Inter',sans-serif]">
@@ -192,18 +212,15 @@ const ProductDetail = () => {
                         <svg className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                         </svg>
-                        <span className="text-xs tracking-[0.2em] uppercase">Back</span>
+                        <span className="text-xs tracking-[0.2em] uppercase font-semibold">Back</span>
                     </button>
-                    <span className="text-xs tracking-[0.3em] uppercase text-amber-400/70 font-light">
-                        Snitch
-                    </span>
+                    <div className="text-amber-500 font-bold tracking-[0.3em] text-lg">SNITCH</div>
+                    <div className="w-16"></div>
                 </div>
             </nav>
 
-            {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
-
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24">
                     {/* ─── Left Column: Image Gallery ─── */}
                     <div className="flex flex-row gap-4">
                         {/* Vertical Thumbnail Strip */}
@@ -211,8 +228,11 @@ const ProductDetail = () => {
                             <div className="flex flex-col gap-3 flex-shrink-0">
                                 {displayImages.map((img, index) => (
                                     <button
-                                        key={img._id}
-                                        onClick={() => setSelectedImage(index)}
+                                        key={img._id || index}
+                                        onClick={() => {
+                                            setImageLoaded(false);
+                                            setSelectedImage(index);
+                                        }}
                                         className={`relative w-16 h-20 lg:w-20 lg:h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 flex-shrink-0 cursor-pointer
                                             ${selectedImage === index
                                                 ? 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.15)]'
@@ -251,7 +271,10 @@ const ProductDetail = () => {
                                     {displayImages.length > 1 && (
                                         <>
                                             <button
-                                                onClick={() => setSelectedImage((prev) => (prev === 0 ? displayImages.length - 1 : prev - 1))}
+                                                onClick={() => {
+                                                    setImageLoaded(false);
+                                                    setSelectedImage((prev) => (prev === 0 ? displayImages.length - 1 : prev - 1));
+                                                }}
                                                 className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full
                                                     bg-black/40 backdrop-blur-md border border-neutral-700/50
                                                     flex items-center justify-center
@@ -265,7 +288,10 @@ const ProductDetail = () => {
                                                 </svg>
                                             </button>
                                             <button
-                                                onClick={() => setSelectedImage((prev) => (prev === displayImages.length - 1 ? 0 : prev + 1))}
+                                                onClick={() => {
+                                                    setImageLoaded(false);
+                                                    setSelectedImage((prev) => (prev === displayImages.length - 1 ? 0 : prev + 1));
+                                                }}
                                                 className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full
                                                     bg-black/40 backdrop-blur-md border border-neutral-700/50
                                                     flex items-center justify-center
@@ -306,13 +332,12 @@ const ProductDetail = () => {
                         <div className="w-12 h-px bg-gradient-to-r from-amber-400/80 to-transparent mb-6" />
 
                         {/* Price */}
-                        <div className="flex items-baseline gap-2 mb-6">
-                            <span className="text-3xl font-light text-amber-400 tracking-tight">
-                                ₹{displayPrice?.amount?.toLocaleString('en-IN')}
-                            </span>
-                            <span className="text-xs text-neutral-500 tracking-[0.1em] uppercase">
-                                {displayPrice?.currency}
-                            </span>
+                        <div className="mb-6 flex flex-col gap-2">
+                            <div className="flex items-baseline gap-3">
+                                <span className="text-3xl font-light tracking-tight text-amber-400">
+                                    {displayCurrency === 'INR' ? '₹' : '$'}{displayCurrentPrice?.toLocaleString('en-IN')}
+                                </span>
+                            </div>
                         </div>
 
                         {/* Description */}

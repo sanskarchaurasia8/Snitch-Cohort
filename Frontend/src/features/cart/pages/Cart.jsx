@@ -10,9 +10,23 @@ const Cart = () => {
         handleGetCart();
     }, []);
 
-    // Calculate subtotal
+    // Helper to resolve the latest price dynamically from the populated product/variant
+    const resolvePrice = (item) => {
+        const product = item.product || {};
+        const variant = product.varients?.find(v => v._id === item.variant) || null;
+        
+        // Priority: Variant -> Product -> Fallback to snapshot
+        const latestPrice = variant?.price?.amount ?? product?.price?.amount ?? item.price?.amount ?? 0;
+        const snapshotPrice = item.price?.amount ?? latestPrice;
+        const currency = variant?.price?.currency ?? product?.price?.currency ?? item.price?.currency ?? 'INR';
+        
+        return { latestPrice, snapshotPrice, currency };
+    };
+
+    // Calculate subtotal dynamically using latest prices
     const subtotal = cartItems.reduce((acc, item) => {
-        return acc + (item.price?.amount || 0) * (item.quantity || 1);
+        const { latestPrice } = resolvePrice(item);
+        return acc + latestPrice * (item.quantity || 1);
     }, 0);
     const shipping = 0; // Free shipping
     const total = subtotal + shipping;
@@ -37,8 +51,11 @@ const Cart = () => {
                                 const product = item.product || {};
                                 const variant = product.varients?.find(v => v._id === item.variant) || {};
                                 const imageUrl = product.images?.[0]?.url || variant.images?.[0]?.url || 'https://via.placeholder.com/150';
-                                const price = item.price?.amount || 0;
-                                const currency = item.price?.currency || 'INR';
+                                
+                                const { latestPrice, snapshotPrice, currency } = resolvePrice(item);
+                                const isPriceReduced = latestPrice < snapshotPrice;
+                                const isPriceIncreased = latestPrice > snapshotPrice;
+                                const discountAmount = snapshotPrice - latestPrice;
 
                                 return (
                                     <div key={item._id} className="bg-[#1c1b1b] rounded-2xl p-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center relative group transition-colors duration-300 hover:bg-[#2a2a2a]">
@@ -59,9 +76,34 @@ const Cart = () => {
                                                 </div>
                                             )}
                                             
-                                            <div className="text-lg font-semibold text-[#F59E0B]">
-                                                {currency === 'INR' ? '₹' : '$'}{price}
+                                            <div className="flex items-end gap-3 mt-2">
+                                                <div className={`text-xl font-semibold ${isPriceReduced ? 'text-emerald-400' : isPriceIncreased ? 'text-rose-400' : 'text-[#F59E0B]'}`}>
+                                                    {currency === 'INR' ? '₹' : '$'}{latestPrice}
+                                                </div>
+                                                {isPriceReduced && (
+                                                    <div className="text-sm text-neutral-500 line-through mb-0.5">
+                                                        {currency === 'INR' ? '₹' : '$'}{snapshotPrice}
+                                                    </div>
+                                                )}
                                             </div>
+
+                                            {/* Price Indicators */}
+                                            {isPriceReduced && (
+                                                <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium tracking-wide">
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                                                    </svg>
+                                                    Save {currency === 'INR' ? '₹' : '$'}{discountAmount}
+                                                </div>
+                                            )}
+                                            {isPriceIncreased && (
+                                                <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium tracking-wide">
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                                    </svg>
+                                                    Price increased
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="flex items-center gap-4 mt-4 sm:mt-0">

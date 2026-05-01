@@ -22,7 +22,9 @@ export async function getAllProducts() {
 }
 
 export async function getProductById(productId) {
-    const responce = await productApiInstance.get(`/detail/${productId}`)
+    const responce = await productApiInstance.get(`/detail/${productId}`, {
+        params: { _t: new Date().getTime() }
+    })
     return responce.data
 }
 
