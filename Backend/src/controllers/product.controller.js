@@ -152,7 +152,7 @@ export async function addProductVariant(req, res) {
         };
 
         // 🔹 Save variant to product
-        product.varients.push(variant);
+        product.variants.push(variant);
         await product.save();
 
         return res.status(201).json({
@@ -169,67 +169,3 @@ export async function addProductVariant(req, res) {
         });
     }
 }
-
-// export async function updateVariantStock(req, res) {
-//     try {
-//         const { id, variantId } = req.params;
-//         const seller = req.user;
-//         const { stock } = req.body;
-
-//         const product = await productModel.findOne({ _id: id, seller: seller._id });
-
-//         if (!product) {
-//             return res.status(404).json({ message: "Product not found", success: false });
-//         }
-
-//         const variant = product.varients.id(variantId);
-
-//         if (!variant) {
-//             return res.status(404).json({ message: "Variant not found", success: false });
-//         }
-
-//         variant.stock = stock;
-//         await product.save();
-
-//         res.status(200).json({
-//             message: "Stock updated successfully",
-//             success: true,
-//             variant,
-//             product
-//         });
-//     } catch (error) {
-//         console.error("Error updating stock:", error);
-//         res.status(500).json({ message: "Failed to update stock", success: false });
-//     }
-// }
-
-// export async function deleteVariant(req, res) {
-//     try {
-//         const { id, variantId } = req.params;
-//         const seller = req.user;
-
-//         const product = await productModel.findOne({ _id: id, seller: seller._id });
-
-//         if (!product) {
-//             return res.status(404).json({ message: "Product not found", success: false });
-//         }
-
-//         const variant = product.varients.id(variantId);
-
-//         if (!variant) {
-//             return res.status(404).json({ message: "Variant not found", success: false });
-//         }
-
-//         product.varients.pull(variantId);
-//         await product.save();
-
-//         res.status(200).json({
-//             message: "Variant deleted successfully",
-//             success: true,
-//             product
-//         });
-//     } catch (error) {
-//         console.error("Error deleting variant:", error);
-//         res.status(500).json({ message: "Failed to delete variant", success: false });
-//     }
-// }

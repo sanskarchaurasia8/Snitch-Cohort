@@ -3,31 +3,35 @@ import { useSelector } from 'react-redux';
 import { useCart } from '../hook/useCart';
 
 const Cart = () => {
-    const cartItems = useSelector(state => state.cart.items) || [];
+    const cart = useSelector(state => state.cart) || [];
     const { handleGetCart, handleIncrementCartItem, handleDecrementCartItem } = useCart();
+
+    useEffect(() => {
+        console.log("Updated cart:", cart);
+    }, [cart]);
 
     useEffect(() => {
         handleGetCart();
     }, []);
 
-    // Helper to resolve the latest price dynamically from the populated product/variant
+    // Helper to resolve the latest price dynamically
     const resolvePrice = (item) => {
         const product = item.product || {};
-        const variant = product.varients?.find(v => v._id === item.variant) || null;
         
-        // Priority: Variant -> Product -> Fallback to snapshot
-        const latestPrice = variant?.price?.amount ?? product?.price?.amount ?? item.price?.amount ?? 0;
+        // Priority: Aggregation item price -> Product price -> Fallback
+        const latestPrice = item.price?.amount ?? product?.price?.amount ?? 0;
         const snapshotPrice = item.price?.amount ?? latestPrice;
-        const currency = variant?.price?.currency ?? product?.price?.currency ?? item.price?.currency ?? 'INR';
+        const currency = item.price?.currency ?? product?.price?.currency ?? 'INR';
         
         return { latestPrice, snapshotPrice, currency };
     };
 
     // Calculate subtotal dynamically using latest prices
-    const subtotal = cartItems.reduce((acc, item) => {
+    const subtotal = cart.totalPrice || cart.items.reduce((acc, item) => {
         const { latestPrice } = resolvePrice(item);
         return acc + latestPrice * (item.quantity || 1);
     }, 0);
+    const cartCurrency = cart.currency || 'INR';
     const shipping = 0; // Free shipping
     const total = subtotal + shipping;
 
@@ -36,7 +40,7 @@ const Cart = () => {
             <div className="max-w-7xl mx-auto">
                 <h1 className="text-3xl md:text-4xl font-semibold mb-8 tracking-tight">Shopping Bag</h1>
                 
-                {cartItems.length === 0 ? (
+                {cart.items.length === 0 ? (
                     <div className="bg-[#1c1b1b] rounded-2xl p-8 text-center">
                         <p className="text-lg text-[#d8c3ad] mb-6">Your bag is empty.</p>
                         <button className="bg-gradient-to-br from-[#FFC174] to-[#F59E0B] text-[#472a00] px-8 py-3 rounded-xl font-medium hover:scale-105 transition-transform duration-200">
@@ -47,9 +51,17 @@ const Cart = () => {
                     <div className="flex flex-col lg:flex-row gap-8">
                         {/* Cart Items List */}
                         <div className="flex-1 space-y-6">
-                            {cartItems.map((item) => {
+                            {cart.items.map((item) => {
                                 const product = item.product || {};
-                                const variant = product.varients?.find(v => v._id === item.variant) || {};
+                                
+                                // Safely handle variants (array from direct fetch, or object from aggregation unwind)
+                                let variant = {};
+                                if (Array.isArray(product.variants)) {
+                                    variant = product.variants.find(v => v._id === item.variant) || {};
+                                } else if (product.variants && typeof product.variants === 'object') {
+                                    variant = product.variants;
+                                }
+
                                 const imageUrl = product.images?.[0]?.url || variant.images?.[0]?.url || 'https://via.placeholder.com/150';
                                 
                                 const { latestPrice, snapshotPrice, currency } = resolvePrice(item);
@@ -143,7 +155,7 @@ const Cart = () => {
                                 <div className="space-y-4 mb-8">
                                     <div className="flex justify-between text-[#d8c3ad]">
                                         <span>Subtotal</span>
-                                        <span>₹{subtotal.toFixed(2)}</span>
+                                        <span>{cartCurrency === 'INR' ? '₹' : '$'}{subtotal.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between text-[#d8c3ad]">
                                         <span>Shipping</span>
@@ -152,7 +164,7 @@ const Cart = () => {
                                     <div className="h-px bg-[#353534] my-4"></div>
                                     <div className="flex justify-between text-xl font-semibold text-[#E5E2E1]">
                                         <span>Total</span>
-                                        <span className="text-[#F59E0B]">₹{total.toFixed(2)}</span>
+                                        <span className="text-[#F59E0B]">{cartCurrency === 'INR' ? '₹' : '$'}{total.toFixed(2)}</span>
                                     </div>
                                 </div>
 

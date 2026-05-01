@@ -15,7 +15,7 @@ export const addItem = async ({ productId, variantId, quantity = 1 }) => {
         return response.data;
     } catch (error) {
         console.error("Cart API Error:", error.response?.data || error.message);
-        throw error.response?.data || error;
+        throw error;
     }
 }
 

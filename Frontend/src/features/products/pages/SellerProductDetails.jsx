@@ -44,7 +44,7 @@ const SellerProductDetails = () => {
       // Update local state for immediate feedback
       setProduct(prev => ({
         ...prev,
-        varients: prev.varients.map(v => v._id === variantId ? { ...v, stock: newStock } : v)
+        variants: prev.variants.map(v => v._id === variantId ? { ...v, stock: newStock } : v)
       }));
     } catch (error) {
       console.error("Failed to update stock", error);
@@ -57,7 +57,7 @@ const SellerProductDetails = () => {
       await handleDeleteVariant(productId, variantId);
       setProduct(prev => ({
         ...prev,
-        varients: prev.varients.filter(v => v._id !== variantId)
+        variants: prev.variants.filter(v => v._id !== variantId)
       }));
     } catch (error) {
       console.error("Failed to delete variant", error);
@@ -179,7 +179,7 @@ const SellerProductDetails = () => {
               </div>
               <div className="space-y-2">
                 <p className="text-[#F59E0B]/30">Variants</p>
-                <p className="text-[#E5E2E1]">{product.varients?.length || 0} Types</p>
+                <p className="text-[#E5E2E1]">{product.variants?.length || 0} Types</p>
               </div>
             </div>
           </div>
@@ -200,7 +200,7 @@ const SellerProductDetails = () => {
             </button>
           </div>
 
-          {product.varients?.length === 0 ? (
+          {product.variants?.length === 0 ? (
             <div className="bg-[#1C1B1B] rounded-[2rem] py-24 flex flex-col items-center justify-center text-center border border-[#F59E0B]/5">
               <div className="w-16 h-16 rounded-full bg-[#F59E0B]/5 flex items-center justify-center mb-8 text-[#F59E0B]/20">
                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
@@ -211,7 +211,7 @@ const SellerProductDetails = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {product.varients.map((v) => (
+              {product.variants.map((v) => (
                 <div key={v._id} className="group bg-[#1C1B1B] rounded-[2rem] p-8 border border-[#F59E0B]/5 hover:border-[#F59E0B]/20 transition-all duration-500">
                   <div className="flex gap-6 mb-8">
                     <div className="w-24 h-32 rounded-2xl bg-[#2A2A2A] overflow-hidden flex-shrink-0">

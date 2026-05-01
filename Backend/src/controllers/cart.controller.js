@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+// import { ObjectId } from "mongodb";
 import cartModel from "../models/cart.model.js";
 import productModel from "../models/product.model.js";
 import {stockOfVariant} from "../dao/product.dao.js";
@@ -9,7 +11,7 @@ export const addToCart = async(req,res)=>{
     
     const product = await productModel.findOne({
         _id: productId,
-        "varients._id":variantId
+        "variants._id":variantId
     });
     
     if(!product){
@@ -36,7 +38,7 @@ export const addToCart = async(req,res)=>{
        }
 
        // Get the variant to get its price
-       const variant = product.varients.id(variantId);
+       const variant = product.variants.id(variantId);
        const variantPrice = variant?.price || product.price;
 
        await cartModel.findOneAndUpdate(
@@ -59,7 +61,7 @@ export const addToCart = async(req,res)=>{
     }
 
     // Get the variant to get its price
-    const variant = product.varients.id(variantId);
+    const variant = product.variants.id(variantId);
     const variantPrice = variant?.price || product.price;
 
     cart.items.push({
@@ -80,7 +82,60 @@ export const addToCart = async(req,res)=>{
 export const getCart = async (req,res) => {
     const user = req.user
 
-    let cart = await cartModel.findOne({user: user._id}).populate("items.product")
+    let cart = (await cartModel.aggregate([
+    {
+      $match: {
+        user: new mongoose.Types.ObjectId(user._id)
+      }
+    },
+    { $unwind: { path: '$items' } },
+    {
+      $lookup: {
+        from: 'products',
+        localField: 'items.product',
+        foreignField: '_id',
+        as: 'items.product'
+      }
+    },
+    { $unwind: { path: '$items.product' } },
+    {
+      $unwind: { path: '$items.product.variants' }
+    },
+    {
+      $match: {
+        $expr: {
+          $eq: [
+            '$items.variant',
+            '$items.product.variants._id'
+          ]
+        }
+      }
+    },
+    {
+      $addFields: {
+        itemPrice: {
+          price: {
+            $multiply: [
+              '$items.quantity',
+              '$items.product.variants.price.amount'
+            ]
+          },
+          currency:
+            '$items.product.variants.price.currency'
+        }
+      }
+    },
+    {
+      $group: {
+        _id: '$_id',
+        totalPrice: { $sum: '$itemPrice.price' },
+        currency: {
+          $first: '$itemPrice.currency'
+        },
+        items: { $push: '$items' }
+      }
+    }
+  ]))[ 0 ]
 
     if(!cart){
         cart = await cartModel.create({ user: user._id});
@@ -98,7 +153,7 @@ export const incrementCartItemQuantity = async (req,res) => {
     
     const product = await productModel.findOne({
         _id: productId,
-        "varients._id": variantId
+        "variants._id": variantId
     })
 
     if(!product){
@@ -181,3 +236,63 @@ export const decrementCartItemQuantity = async (req,res) => {
     });
 
 }
+
+
+
+// Aggregation Pipelinea Data
+
+
+//   [
+//     {
+//       $match: {
+//         user: ObjectId('69db878b7bd7af19160fb798')
+//       }
+//     },
+//     { $unwind: { path: '$items' } },
+//     {
+//       $lookup: {
+//         from: 'products',
+//         localField: 'items.product',
+//         foreignField: '_id',
+//         as: 'items.product'
+//       }
+//     },
+//     { $unwind: { path: '$items.product' } },
+//     {
+//       $unwind: { path: '$items.product.variants' }
+//     },
+//     {
+//       $match: {
+//         $expr: {
+//           $eq: [
+//             '$items.variant',
+//             '$items.product.variants._id'
+//           ]
+//         }
+//       }
+//     },
+//     {
+//       $addFields: {
+//         itemPrice: {
+//           price: {
+//             $multiply: [
+//               '$items.quantity',
+//               '$items.product.variants.price.amount'
+//             ]
+//           },
+//           currency:
+//             '$items.product.variants.price.currency'
+//         }
+//       }
+//     },
+//     {
+//       $group: {
+//         _id: '$_id',
+//         totalPrice: { $sum: '$itemPrice.price' },
+//         currency: {
+//           $first: '$itemPrice.currency'
+//         },
+//         items: { $push: '$items' }
+//       }
+//     }
+//   ]

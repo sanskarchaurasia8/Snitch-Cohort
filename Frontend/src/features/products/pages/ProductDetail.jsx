@@ -31,8 +31,8 @@ const ProductDetail = () => {
         if (isBackgroundRefetch) {
             // Update active variant with fresh data to reflect price changes
             setActiveVariant(prev => {
-                if (!prev || !data.varients) return prev;
-                return data.varients.find(v => v._id === prev._id) || prev;
+                if (!prev || !data.variants) return prev;
+                return data.variants.find(v => v._id === prev._id) || prev;
             });
         } else {
             setIsLoading(false);
@@ -55,8 +55,8 @@ const ProductDetail = () => {
     }, [selectedImage]);
 
     useEffect(() => {
-        if (product && product.varients && product.varients.length > 0 && !activeVariant) {
-            const firstVariant = product.varients[0];
+        if (product && product.variants && product.variants.length > 0 && !activeVariant) {
+            const firstVariant = product.variants[0];
             setActiveVariant(firstVariant);
 
             if (firstVariant.attributes) {
@@ -76,7 +76,7 @@ const ProductDetail = () => {
     }, [product, activeVariant]);
 
     // Compute variants and attributes
-    const variants = useMemo(() => product?.varients || [], [product]);
+    const variants = useMemo(() => product?.variants || [], [product]);
 
     const attributeKeys = useMemo(() => {
         const keys = new Set();
@@ -391,16 +391,22 @@ const ProductDetail = () => {
                                     transition-all duration-300 cursor-pointer"
 
                                 onClick={async () => {
-                                    if (!activeVariant) return;
+                                    if (!activeVariant) {
+                                        alert("Please select a variant.");
+                                        return;
+                                    }
                                     try {
-                                        await handleAddItem(product._id, activeVariant._id, 1);
+                                        const currentProductId = product?._id || productId;
+                                        await handleAddItem(currentProductId, activeVariant._id, 1);
                                         alert("Product added to cart!");
                                     } catch (error) {
-                                        console.error("Add to cart failed:", error);
-                                        if (error?.message === "Unauthorized" || error === "Unauthorized" || error?.message?.toLowerCase().includes("unauthorized")) {
+                                        console.error("Add to cart failed:", error.response?.data || error);
+                                        const errorMessage = error.response?.data?.message || error?.message || "Failed to add to cart.";
+                                        
+                                        if (errorMessage.toLowerCase().includes("unauthorized") || error.response?.status === 401) {
                                             navigate('/login');
                                         } else {
-                                            alert(error?.message || "Failed to add to cart. Please try again or log in.");
+                                            alert(errorMessage);
                                         }
                                     }
                                 }}
